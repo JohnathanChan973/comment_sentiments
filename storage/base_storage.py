@@ -109,3 +109,29 @@ class BaseStorage(ABC, Generic[T_Video, T_Comment, T_Sentiment]):
             List of videos needing analysis
         """
         pass
+
+    @abstractmethod
+    def save_channel(self, channel_data: Dict[str, Any]) -> Any:
+        """
+        Save or update a channel record.
+        
+        Args:
+            channel_data: Dictionary containing channel information
+            
+        Returns:
+            Channel object
+        """
+        pass
+        
+    @abstractmethod
+    def save_playlist(self, playlist_data: Dict[str, Any]) -> Any:
+        """
+        Save or update a playlist record.
+        
+        Args:
+            playlist_data: Dictionary containing playlist information
+            
+        Returns:
+            Playlist object
+        """
+        pass

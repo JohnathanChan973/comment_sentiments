@@ -1,6 +1,7 @@
+import pandas as pd
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 from ..base_storage import BaseStorage
@@ -8,6 +9,8 @@ from ..file_util import FileUtils
 from .models.yt_video import YTVideo
 from .models.yt_comment import YTComment
 from .models.sentiment import Sentiment
+from .models.yt_channel import YTChannel
+from .models.yt_playlist import YTPlaylist
 from .models import Base
 from logger_config import get_logger
 
@@ -207,6 +210,119 @@ class SQLiteStorage(BaseStorage[YTVideo, YTComment, Sentiment]):
             videos = session.query(YTVideo).all()
             result = YTVideo.filter_needs_reanalysis(videos, max_age_days, force_recent_days)
             return result['needs_analysis']
+        
+    def table_to_df(self, table_name: str, cols: list = None) -> pd.DataFrame:
+        """
+        Gives the table in the database as a pandas DataFrame.
+
+        Args:
+            table_name: The name of the table
+            cols: List of the columns in the table
+
+        Returns:
+            pd.DataFrame: The requested table and columns as a dataframe
+
+        Raises:
+            ValueError: If the table does not exist or required columns are missing
+        """
+        inspector = inspect(self.engine)
+
+        # Check if the table exists
+        if table_name not in inspector.get_table_names():
+            raise ValueError(f"Table '{table_name}' does not exist in the database.")
+
+        # If cols are provided, check that they exist
+        if cols:
+            # Get actual column names from the table
+            actual_columns = {col["name"] for col in inspector.get_columns(table_name)}
+            invalid_cols = [col for col in cols if col not in actual_columns]
+            if invalid_cols:
+                raise ValueError(f"Invalid column(s) for table '{table_name}': {', '.join(invalid_cols)}")
+            selected = ", ".join(cols)
+        else:
+            selected = "*"
+
+        return pd.read_sql(f"SELECT {selected} FROM {table_name}", con=self.engine)
+    
+    def save_channel(self, channel_data: Dict[str, Any]) -> YTChannel:
+        """
+        Save or update a channel record.
+        
+        Args:
+            channel_data: Dictionary containing channel information
+            
+        Returns:
+            YTChannel: The saved channel object
+        """
+        with self.Session() as session:
+            try:
+                channel = session.get(YTChannel, channel_data['id'])
+                if not channel:
+                    channel = YTChannel(id=channel_data['id'])
+                
+                # Update channel attributes
+                channel.name = channel_data.get('name', '')
+                channel.custom_url = channel_data.get('custom_url')
+                channel.subscriber_count = channel_data.get('subscriber_count')
+                channel.video_count = channel_data.get('video_count')
+                channel.view_count = channel_data.get('view_count')
+                channel.published_at = channel_data.get('published_at')
+                channel.country = channel_data.get('country')
+                channel.uploads_playlist_id = channel_data.get('uploads_playlist_id')
+                
+                session.add(channel)
+                session.commit()
+                logger.info(f"Saved channel: {channel.id} - {channel.name}")
+                return channel
+                
+            except SQLAlchemyError as e:
+                session.rollback()
+                logger.error(f"Error saving channel {channel_data.get('id')}: {e}")
+                raise
+    
+    def save_playlist(self, playlist_data: Dict[str, Any]) -> YTPlaylist:
+        """
+        Save or update a playlist record.
+        
+        Args:
+            playlist_data: Dictionary containing playlist information
+            
+        Returns:
+            YTPlaylist: The saved playlist object
+            
+        Raises:
+            ValueError: If the channel_id is missing or the channel doesn't exist
+        """
+        if 'channel_id' not in playlist_data:
+            raise ValueError("channel_id is required for saving a playlist")
+        
+        with self.Session() as session:
+            try:
+                # First check if the channel exists
+                channel = session.get(YTChannel, playlist_data['channel_id'])
+                if not channel:
+                    raise ValueError(f"Channel with ID {playlist_data['channel_id']} does not exist")
+                
+                # Get or create playlist
+                playlist = session.get(YTPlaylist, playlist_data['id'])
+                if not playlist:
+                    playlist = YTPlaylist(id=playlist_data['id'])
+                
+                # Update playlist attributes
+                playlist.title = playlist_data.get('title', '')
+                playlist.channel_id = playlist_data['channel_id']
+                playlist.published_at = playlist_data.get('published_at')
+                playlist.video_count = playlist_data.get('video_count', 0)
+                
+                session.add(playlist)
+                session.commit()
+                logger.info(f"Saved playlist: {playlist.id} - {playlist.title}")
+                return playlist
+                
+            except SQLAlchemyError as e:
+                session.rollback()
+                logger.error(f"Error saving playlist {playlist_data.get('id')}: {e}")
+                raise
     
     def __del__(self):
         """Cleanup SQLAlchemy engine when object is destroyed."""

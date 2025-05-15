@@ -1,8 +1,8 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from .analysis_mixin import AnalysisMixin
-from datetime import datetime, timezone, timedelta
-from typing import List, Dict, Set
+from datetime import datetime, timezone
+from typing import List, Dict
 from .base import Base
 
 class YTVideo(Base, AnalysisMixin):
@@ -13,13 +13,14 @@ class YTVideo(Base, AnalysisMixin):
     title = Column(String)
     description = Column(String)
     published_at = Column(DateTime)
-    channel_id = Column(String)
+    channel_id = Column(String, ForeignKey('youtube_channels.id'))
     view_count = Column(Integer, default=0)
     like_count = Column(Integer, default=0) 
     comment_count = Column(Integer, default=0)
 
     # Relationships
     comments = relationship("YTComment", back_populates="video", cascade="all, delete-orphan")
+    channel = relationship("YTChannel", back_populates="videos")
 
     def needs_reanalysis(self, max_age_days: int = 30, force_recent_days: int = 7) -> bool:
         """

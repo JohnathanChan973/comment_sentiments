@@ -1,4 +1,11 @@
 import pytest
+import os
+
+pytestmark = pytest.mark.skipif(
+    os.getenv("SKIP_SLOW_TESTS") == "1",
+    reason="Skipping slow model-based tests"
+)
+
 from sentiment_analyzer import SentimentAnalyzer
 
 @pytest.fixture(scope="module")

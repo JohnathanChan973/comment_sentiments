@@ -57,6 +57,22 @@ class FileStorage(BaseStorage[FileVideo, FileComment, FileSentiment]):
         logger.info(f"Saved video info: {video.id}")
         return video
     
+    def save_channel(self, channel_data: Dict[str, Any]) -> Any:
+        """
+        Empty implementation of channel saving for file storage.
+        Channel data is not persisted in file storage.
+        """
+        logger.info(f"Channel saving not implemented for file storage. Channel ID: {channel_data.get('id')}")
+        pass
+
+    def save_playlist(self, playlist_data: Dict[str, Any]) -> Any:
+        """
+        Empty implementation of playlist saving for file storage.
+        Playlist data is not persisted in file storage.
+        """
+        logger.info(f"Playlist saving not implemented for file storage. Playlist ID: {playlist_data.get('id')}")
+        pass
+
     def save_comments(self, comments: List[Dict[str, Any]], video_id: str) -> List[FileComment]:
         """Save comments to JSON file."""
         video_path = self._get_video_path(video_id)

@@ -60,6 +60,20 @@ class CommentAnalysisTask:
                 # Parse the ISO 8601 datetime string from the API
                 published_at = datetime.fromisoformat(self.video.publish_date.replace('Z', '+00:00'))
                 
+                # Save channel data first
+                channel_data = {
+                    "id": self.video.channel_id,
+                    "name": self.video.channel_title,
+                    "custom_url": None,  # Not available in video response
+                    "subscriber_count": None,  # Not available in video response
+                    "video_count": None,  # Not available in video response
+                    "view_count": None,  # Not available in video response
+                    "published_at": None,  # Not available in video response
+                    "country": None,  # Not available in video response
+                    "uploads_playlist_id": None  # Not available in video response
+                }
+                self.storage.save_channel(channel_data)
+                
                 # Save video data
                 video_data = {
                     "id": self.video_id,
@@ -77,6 +91,11 @@ class CommentAnalysisTask:
         except Exception as e:
             logger.error(f"Error fetching video data: {e}")
             raise
+            # print(f"Error type: {type(e)}")
+            # print(f"Error args: {e.args}")
+            # import traceback
+            # traceback.print_exc()
+            # raise
             
     def _fetch_comments(self):
         """Fetch video comments."""

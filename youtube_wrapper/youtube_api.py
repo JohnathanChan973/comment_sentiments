@@ -52,7 +52,7 @@ class YouTubeAPI:
     # Video-related methods
     # =====================
     
-    def get_video(self, url_or_id: str) -> 'YouTubeVideo':
+    def get_video(self, url_or_id: str) -> YouTubeVideo:
         """
         Get a YouTubeVideo object for the specified URL or ID.
         

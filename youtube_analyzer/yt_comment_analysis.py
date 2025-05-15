@@ -26,7 +26,7 @@ class YouTubeCommentAnalyzer:
     def __init__(self, api_key: Optional[str] = None, 
              storage_type: str = "sqlite",
              base_storage_path: str = "./data",
-             db_name: str = "youtube_comments",
+             db_name: str = "youtube_analysis",
              save: bool = True,
              max_workers: Optional[int] = None,
              use_api_cache: bool = False,
@@ -130,6 +130,32 @@ class YouTubeCommentAnalyzer:
             channel = self.api.get_channel(channel_url_or_id)
             logger.info(f"Analyzing channel: {channel.name} ({channel.id})")
             
+            if self.save:
+                # Save channel data
+                channel_data = {
+                    "id": channel.id,
+                    "name": channel.name,
+                    "custom_url": channel.custom_url,
+                    "subscriber_count": channel.subscriber_count,
+                    "video_count": channel.video_count,
+                    "view_count": channel.view_count,
+                    "published_at": channel.published_at,
+                    "country": channel.country,
+                    "uploads_playlist_id": channel.uploads_playlist_id
+                }
+                self.storage.save_channel(channel_data)
+                
+                # Save uploads playlist if it exists
+                if channel.uploads_playlist_id:
+                    playlist_data = {
+                        "id": channel.uploads_playlist_id,
+                        "title": f"{channel.name} - Uploads",
+                        "channel_id": channel.id,
+                        "published_at": channel.published_at,
+                        "video_count": channel.video_count
+                    }
+                    self.storage.save_playlist(playlist_data)
+            
             video_ids = channel.get_video_ids(max_videos)
             logger.info(f"Found {len(video_ids)} videos in channel")
             
@@ -152,6 +178,31 @@ class YouTubeCommentAnalyzer:
             playlist = self.api.get_playlist(playlist_url_or_id)
             logger.info(f"Analyzing playlist: {playlist.title} ({playlist.id})")
             
+            if self.save:
+                # Save channel data first
+                channel_data = {
+                    "id": playlist.channel_id,
+                    "name": playlist.channel_title,
+                    "custom_url": None,  # Not available in playlist response
+                    "subscriber_count": None,  # Not available in playlist response
+                    "video_count": None,  # Not available in playlist response
+                    "view_count": None,  # Not available in playlist response
+                    "published_at": None,  # Not available in playlist response
+                    "country": None,  # Not available in playlist response
+                    "uploads_playlist_id": None  # Not available in playlist response
+                }
+                self.storage.save_channel(channel_data)
+                
+                # Save playlist data
+                playlist_data = {
+                    "id": playlist.id,
+                    "title": playlist.title,
+                    "channel_id": playlist.channel_id,
+                    "published_at": None,  # Not directly available in playlist response
+                    "video_count": playlist.item_count
+                }
+                self.storage.save_playlist(playlist_data)
+            
             video_ids = playlist.get_video_ids()
             logger.info(f"Found {len(video_ids)} videos in playlist")
             
@@ -159,38 +210,3 @@ class YouTubeCommentAnalyzer:
         except Exception as e:
             logger.error(f"Error analyzing playlist {playlist_url_or_id}: {e}")
             return []
-
-def main():
-    # """Example usage of the YouTube Comment Analyzer."""
-    # import os
-    
-    # # Get API key from environment variable
-    # api_key = os.getenv("YOUTUBE_API_KEY")
-    
-    # # Initialize the analyzer
-    analyzer = YouTubeCommentAnalyzer()
-    
-    # # Example 1: Analyze a single video
-    # video_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-    # print(f"\nAnalyzing video: {video_url}")
-    # video_result = analyzer.analyze_video(video_url)
-    # print(f"Video title: {video_result['video_title']}")
-    # print(f"Comment count: {video_result['comment_count']}")
-    # print(f"Sentiment summary: {video_result['sentiment_summary']}")
-    
-    # Example 2: Analyze a channel (limit to 5 videos)
-    channel_url = "https://www.youtube.com/@SapphireDragon9189"
-    print(f"\nAnalyzing channel: {channel_url}")
-    channel_results = analyzer.analyze_channel(channel_url)
-    print(f"Analyzed {len(channel_results)} videos from channel")
-    
-    # # Example 3: Analyze a playlist
-    # playlist_url = "https://www.youtube.com/playlist?list=PLHFlHpPjgk713fMv5O4s4Fv7k6yTkXwkV"
-    # print(f"\nAnalyzing playlist: {playlist_url}")
-    # playlist_results = analyzer.analyze_playlist(playlist_url)
-    # print(f"Analyzed {len(playlist_results)} videos from playlist")
-    pass
-
-if __name__ == "__main__":
-    # import concurrent.futures
-    main()
