@@ -11,6 +11,7 @@ Built as a modular, extensible system with clean object-oriented design.
 """
 import threading
 from typing import List, Dict, Any, Optional
+from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from youtube_wrapper.youtube_api import YouTubeAPI
 from sentiment_analyzer import SentimentAnalyzer
@@ -132,6 +133,7 @@ class YouTubeCommentAnalyzer:
             
             if self.save:
                 # Save channel data
+                channel_published_at = datetime.fromisoformat(channel.published_at.replace('Z', '+00:00'))
                 channel_data = {
                     "id": channel.id,
                     "name": channel.name,
@@ -139,7 +141,7 @@ class YouTubeCommentAnalyzer:
                     "subscriber_count": channel.subscriber_count,
                     "video_count": channel.video_count,
                     "view_count": channel.view_count,
-                    "published_at": channel.published_at,
+                    "published_at": channel_published_at,
                     "country": channel.country,
                     "uploads_playlist_id": channel.uploads_playlist_id
                 }
@@ -151,7 +153,7 @@ class YouTubeCommentAnalyzer:
                         "id": channel.uploads_playlist_id,
                         "title": f"{channel.name} - Uploads",
                         "channel_id": channel.id,
-                        "published_at": channel.published_at,
+                        "published_at": channel_published_at,
                         "video_count": channel.video_count
                     }
                     self.storage.save_playlist(playlist_data)
@@ -193,12 +195,14 @@ class YouTubeCommentAnalyzer:
                 }
                 self.storage.save_channel(channel_data)
                 
+                playlist_published_at = datetime.fromisoformat(playlist.published_at.replace('Z', '+00:00'))
+
                 # Save playlist data
                 playlist_data = {
                     "id": playlist.id,
                     "title": playlist.title,
                     "channel_id": playlist.channel_id,
-                    "published_at": None,  # Not directly available in playlist response
+                    "published_at": playlist_published_at,
                     "video_count": playlist.item_count
                 }
                 self.storage.save_playlist(playlist_data)

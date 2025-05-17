@@ -84,6 +84,7 @@ class MockYouTubeAPI:
         self.playlist.channel_id = "test_channel_id"
         self.playlist.channel_title = "Test Channel"
         self.playlist.item_count = 2
+        self.playlist.published_at = "2023-01-01T00:00:00Z"
         self.playlist.get_video_ids = Mock(return_value=["video1", "video2"])
         
         # Set up mock methods

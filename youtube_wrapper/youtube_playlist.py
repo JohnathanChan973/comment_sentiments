@@ -63,6 +63,13 @@ class YouTubePlaylist:
         return None
     
     @property
+    def published_at(self) -> Optional[str]:
+        """Get when the playlist was published."""
+        if self._ensure_details_loaded():
+            return self._snippet.get('publishedAt')
+        return None
+    
+    @property
     def channel_id(self) -> Optional[str]:
         """Get the channel ID of the playlist."""
         if self._ensure_details_loaded():

@@ -261,14 +261,10 @@ class SQLiteStorage(BaseStorage[YTVideo, YTComment, Sentiment]):
                     channel = YTChannel(id=channel_data['id'])
                 
                 # Update channel attributes
-                channel.name = channel_data.get('name', '')
-                channel.custom_url = channel_data.get('custom_url')
-                channel.subscriber_count = channel_data.get('subscriber_count')
-                channel.video_count = channel_data.get('video_count')
-                channel.view_count = channel_data.get('view_count')
-                channel.published_at = channel_data.get('published_at')
-                channel.country = channel_data.get('country')
-                channel.uploads_playlist_id = channel_data.get('uploads_playlist_id')
+                for field in ['name', 'custom_url', 'subscriber_count', 'video_count', 'view_count', 'published_at', 'country', 'uploads_playlist_id']:
+                    value = channel_data.get(field)
+                    if value is not None:
+                        setattr(channel, field, value)
                 
                 session.add(channel)
                 session.commit()

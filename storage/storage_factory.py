@@ -58,6 +58,12 @@ class StorageFactory(BaseStorage[T_Video, T_Comment, T_Sentiment]):
     def save_comments(self, comments, video_id):
         return self._storage.save_comments(comments, video_id)
     
+    def save_channel(self, channel_data):
+        return self._storage.save_channel(channel_data)
+    
+    def save_playlist(self, playlist_data):
+        return self._storage.save_playlist(playlist_data)
+    
     def save_sentiment_results(self, results):
         return self._storage.save_sentiment_results(results)
     
@@ -89,5 +95,5 @@ class StorageFactory(BaseStorage[T_Video, T_Comment, T_Sentiment]):
         return StorageFactory(storage_type, **kwargs)
 
 # Register the built-in storage types
-StorageFactory.register_storage_type("file", FileStorage)
+# StorageFactory.register_storage_type("file", FileStorage)
 StorageFactory.register_storage_type("sqlite", SQLiteStorage)

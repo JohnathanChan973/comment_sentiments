@@ -12,7 +12,7 @@ def get_logger(log_name: str, level=logging.INFO, stream: bool=False) -> logging
     if not logger.hasHandlers():
         formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(processName)s - %(message)s")
 
-        file_handler = logging.FileHandler(log_path)
+        file_handler = logging.FileHandler(log_path, encoding='utf-8') # To properly handle strange characters
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
